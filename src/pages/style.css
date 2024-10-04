@@ -1,11 +1,11 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #F4F4F4;
-    background-image: url('../images/background.png');
-    background-repeat: no-repeat;
-    background-position: 10% 0%;
+	font-family: Arial, sans-serif;
+	background-color: #F4F4F4;
+	background-image: url('../images/background.png');
+	background-repeat: no-repeat;
+	background-position: 10% 0%;
 	background-attachment: fixed;
-	overflow-y:scroll
+	overflow-y: scroll
 }
 
 img {
@@ -18,13 +18,13 @@ a.button {
 	color: #000;
 	border: solid 1px #000;
 	display: inline;
-	text-align: center ;
+	text-align: center;
 	text-decoration: none;
 	border-radius: 3px;
 	margin: 10px;
 	padding: 2px;
 	background: #D0D0D0;
-	cursor:pointer;
+	cursor: pointer;
 }
 
 a:hover.button {
@@ -32,9 +32,9 @@ a:hover.button {
 }
 
 .page {
-    width: 650px;
-    margin-left: auto;
-    margin-right: auto;
+	width: 650px;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 .info-box {
