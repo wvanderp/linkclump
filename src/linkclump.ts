@@ -7,7 +7,7 @@ declare global {
 	interface Window {
 		settings: Settings["actions"] | Record<string, undefined>;
 		setting: number;
-		
+
 		key_pressed: number;
 		mouse_button: number | null;
 		stop_menu: boolean;
@@ -65,10 +65,10 @@ chrome.runtime.sendMessage(
 	} as InitMessage,
 	function (response: InitResponse | null) {
 		if (response === null) {
-			console.log("Unable to load linkclump due to null response");
+			console.error("Unable to load linkclump due to null response");
 		} else {
 			if (response.hasOwnProperty("error")) {
-				console.log("Unable to properly load linkclump, returning to default settings: " + JSON.stringify(response));
+				console.error("Unable to properly load linkclump, returning to default settings: " + JSON.stringify(response));
 			}
 
 			window.settings = response.actions;
@@ -80,7 +80,7 @@ chrome.runtime.sendMessage(
 
 				if (re.test(window.location.href)) {
 					allowed = false;
-					console.log("Linkclump is blocked on this site: " + response.blocked[i] + "~" + window.location.href);
+					console.error("Linkclump is blocked on this site: " + response.blocked[i] + "~" + window.location.href);
 				}
 			}
 
@@ -107,13 +107,21 @@ chrome.runtime.onMessage.addListener(function (request) {
 	if (request.message === "update") {
 		window.settings = request.settings.actions;
 	}
+	if (request.message === "copyToClipboard") {
+		const textarea = document.createElement("textarea");
+		textarea.value = request.text;
+		document.body.appendChild(textarea);
+		textarea.select();
+		document.execCommand("copy");
+		document.body.removeChild(textarea);
+	}
 });
 
 function create_box() {
 	// @ts-expect-error -- all will be right at the end of the function
 	window.box = document.createElement("span");
 	window.box.style.margin = "0px auto";
-	window.box.style.border = "2px dotted" + (window.settings[window.setting]?.color ?? "red");
+	window.box.style.border = "2px dotted " + (window.settings[window.setting]?.color ?? "red");
 	window.box.style.position = "absolute";
 	window.box.style.zIndex = Z_INDEX;
 	window.box.style.visibility = "hidden";
@@ -147,8 +155,6 @@ function create_count_label() {
 
 function mousemove(event: MouseEvent) {
 	prevent_escalation(event);
-
-	console.log("mousemove", allow_selection(), window.scroll_bug_ignore);
 	if (allow_selection() || window.scroll_bug_ignore) {
 		window.scroll_bug_ignore = false;
 		update_box(event.pageX, event.pageY);
@@ -166,7 +172,6 @@ function mousemove(event: MouseEvent) {
 }
 
 function clean_up() {
-	console.log("cleaning up", window.box, window.count_label);
 	// remove the box
 	if (window.box) window.box.style.visibility = "hidden";
 	if (window.count_label) window.count_label.style.visibility = "hidden";
@@ -204,7 +209,6 @@ function mousedown(event: MouseEvent) {
 
 		// if mouse up timer is set then clear it as it was just caused by bounce
 		if (window.timer !== 0) {
-			//console.log("bounced!");
 			clearTimeout(window.timer);
 			window.timer = 0;
 
@@ -215,7 +219,6 @@ function mousedown(event: MouseEvent) {
 		} else {
 			// clean up any mistakes
 			if (window.box_on) {
-				console.log("box wasn't removed from previous operation");
 				clean_up();
 			}
 
@@ -314,7 +317,7 @@ function getXY(element: HTMLElement): { x: number, y: number } {
 
 	parent = element;
 	while (parent && parent !== document.body) {
-		if (parent.scrollleft) {
+		if (parent.scrollLeft) {
 			x -= parent.scrollLeft;
 		}
 		if (parent.scrollTop) {
@@ -428,14 +431,13 @@ function stop() {
 	window.removeEventListener("mousewheel", mousewheel, true);
 	window.removeEventListener("mouseout", mouseout, true);
 
-	console.log("stopping box on" + window.box_on);
 	if (window.box_on) {
 		clean_up();
 	}
 
 	// turn on menu for linux
 	if (window.os === OS_LINUX && window.settings[window.setting]?.key != window.key_pressed) {
-		window.stop_menu == false;
+		window.stop_menu = false;
 	}
 }
 
@@ -625,7 +627,7 @@ function allow_selection() {
 			window.settings[i]?.mouse == window.mouse_button
 			&& window.settings[i]?.key == window.key_pressed
 		) {
-			window.setting = Number.parseInt(i, 10)
+			window.setting = Number.parseInt(i, 10);
 			if (window.box !== null) {
 				window.box.style.border = "2px dotted " + window.settings[i]?.color;
 			}

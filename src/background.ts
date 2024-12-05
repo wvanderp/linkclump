@@ -147,14 +147,11 @@ function openTab(
  * @param {string} text - Text to copy to clipboard
  */
 function copyToClipboard(text: string) {
-	navigator.clipboard.writeText(text).then(
-		function () {
-			console.log("Copied to clipboard");
-		},
-		function (err) {
-			console.error("Failed to copy to clipboard", err);
+	chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+		if (tabs[0].id) {
+			chrome.tabs.sendMessage(tabs[0].id, { message: "copyToClipboard", text: text });
 		}
-	);
+	});
 }
 
 function pad(number: number, length: number) {
@@ -177,6 +174,11 @@ function timeConverter(a: Date) {
 	return time;
 }
 
+async function sendInit(callback: (response?: any) => void) {
+	const settings = await settingsManager.load();
+	callback(settings);
+}
+
 // Link copy formats
 const URLS_WITH_TITLES = 0
 const URLS_ONLY = 1
@@ -187,7 +189,7 @@ const AS_LIST_LINK_HTML = 5
 const AS_MARKDOWN = 6
 
 function formatLink({ url, title }: ActivateMessage["urls"][0], copyFormat: CopyFormat) {
-	switch (copyFormat) {
+	switch (Number.parseInt(copyFormat, 10)) {
 		case URLS_WITH_TITLES:
 			return title + "\t" + url + "\n";
 		case URLS_ONLY:
@@ -202,13 +204,9 @@ function formatLink({ url, title }: ActivateMessage["urls"][0], copyFormat: Copy
 			return '<li><a href="' + url + '">' + title + "</a></li>\n";
 		case AS_MARKDOWN:
 			return "[" + title + "](" + url + ")\n";
+		default:
+			throw new Error("Invalid copy format: " + copyFormat);
 	}
-}
-
-async function sendInit(callback: (response?: any) => void) {
-	const settings = await settingsManager.load();
-	callback(settings);
-
 }
 
 function handleCopy(request: ActivateMessage<ActivateMessage_copy>) {
@@ -392,7 +390,6 @@ function handleRequests(request: Messages, sender: chrome.runtime.MessageSender,
 }
 
 chrome.runtime.onMessage.addListener(handleRequests);
-
 
 if (!settingsManager.isInit()) {
 	// initialize settings manager with defaults and to stop this appearing again

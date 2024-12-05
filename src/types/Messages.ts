@@ -58,7 +58,6 @@ export type ActivateMessage<T extends ActivateMessageTypes = ActivateMessageType
     "setting": T
 }
 
-
 export type UpdateMessage = {
     "message": "update",
     "settings": Settings,

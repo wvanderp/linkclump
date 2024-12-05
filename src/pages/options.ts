@@ -2,8 +2,39 @@ import "../libs/jquery-1.8.2.min.js";
 import "../libs/colorpicker/jquery.colorpicker.js";
 import "../libs/colorpicker/jquery.colorpicker.css";
 import "./style.css"
+import { Settings } from "../types/Settings";
 
-var config = {
+interface Trigger {
+    name: string;
+}
+
+interface ActionOption {
+    name: string;
+    type: 'selection' | 'selection-textbox' | 'textbox' | 'checkbox';
+    data?: string[];
+    extra: string;
+}
+
+interface Action {
+    name: string;
+    options: string[];
+}
+
+interface Config {
+    triggers: Trigger[];
+    actions: Record<string, Action>;
+    options: Record<string, ActionOption>;
+}
+
+interface ActionParam {
+    mouse: number;
+    key: number;
+    color: string;
+    action: string;
+    options: Record<string, any>;
+}
+
+const config: Config = {
 	"triggers":
 		[{ "name": "Left" }, { "name": "Middle" }, { "name": "Right" }],
 	"actions": {
@@ -64,17 +95,17 @@ var config = {
 	}
 };
 
-var OS_WIN = 0;
-var OS_LINUX = 1;
-var OS_MAC = 2;
+const OS_WIN = 0;
+const OS_LINUX = 1;
+const OS_MAC = 2;
 
-var colors = ["458B74", "838B8B", "CCCCCC", "0000FF", "8A2BE2", "D2691E", "6495ED", "DC143C", "006400", "9400D3", "1E90FF", "228B22", "00FF00", "ADFF2F", "FF69B4", "4B0082", "F0E68C", "8B814C", "87CEFA", "32CD32", "000080", "FFA500", "FF4500", "DA70D6", "8B475D", "8B668B", "FF0000", "2E8B57", "8E388E", "FFFF00"];
-var params = null;
-var div_history = [];
-var keys = displayKeys(0);
-var os = ((navigator.appVersion.indexOf("Win") === -1) ? ((navigator.appVersion.indexOf("Mac") === -1) ? OS_LINUX : OS_MAC) : OS_WIN);
+const colors: string[] = ["458B74", "838B8B", "CCCCCC", "0000FF", "8A2BE2", "D2691E", "6495ED", "DC143C", "006400", "9400D3", "1E90FF", "228B22", "00FF00", "ADFF2F", "FF69B4", "4B0082", "F0E68C", "8B814C", "87CEFA", "32CD32", "000080", "FFA500", "FF4500", "DA70D6", "8B475D", "8B668B", "FF0000", "2E8B57", "8E388E", "FFFF00"];
+let params: Settings | null = null;
+const div_history: Record<string, JQuery> = [];
+const keys = displayKeys(0);
+const os = ((navigator.appVersion.indexOf("Win") === -1) ? ((navigator.appVersion.indexOf("Mac") === -1) ? OS_LINUX : OS_MAC) : OS_WIN);
 
-function close_form(event) {
+function close_form(event: JQuery.Event) {
 	$("#form-background").fadeOut();
 
 	event.preventDefault();
@@ -96,8 +127,7 @@ function tour2() {
  * 
  * @param {string | null} id 
  */
-function load_action(id) {  // into form
-
+function load_action(id: string | null) {  // into form
 	if (id === null) {
 		displayKeys(0);
 		displayOptions("tabs");
@@ -106,7 +136,7 @@ function load_action(id) {  // into form
 		$("#form_key").val(90);   // and z key
 		$(".colorpicker-trigger").css("background-color", "#" + colors[Math.floor(Math.random() * colors.length)]);
 	} else {
-		var param = params.actions[id];
+		var param = params?.actions[id];
 		$("#form_id").val(id);
 
 		$("#form_mouse").val(param.mouse);
@@ -173,7 +203,7 @@ function load_action(id) {  // into form
  * @param {string} id 
  * @param {JQuery<HTMLElement>} div
  */
-function delete_action(id, div) {
+function delete_action(id: string, div: JQuery) {
 	div.fadeOut("swing", function () {
 		var del = $("<div class='undo'>Action has been deleted </div>");
 		var undo = $("<a>undo</a>").click({ "i": id, "param": params.actions[id] },
@@ -198,7 +228,7 @@ function delete_action(id, div) {
 	});
 }
 
-function setup_action(param, id) {
+function setup_action(param: ActionParam, id: string): JQuery {
 	var setting = $("<div class='setting' id='action_" + id + "'>");
 
 	setting.append("<h3>" + config.actions[param.action].name + "</h3>");
@@ -309,7 +339,7 @@ function setup_form() {
 	$('input[value="tabs"]').attr("checked", "checked");
 }
 
-function setup_text(keys) {
+function setup_text(keys: Record<number, string>) {
 	var param;
 	for (var i in params.actions) {
 		param = params.actions[i];
@@ -362,7 +392,7 @@ function check_selection() {
 	}
 }
 
-function displayOptions(action) {
+function displayOptions(action: string) {
 	var options = $("#form_options");
 	options.empty();
 
@@ -415,10 +445,10 @@ function displayOptions(action) {
 	}
 }
 
-function displayKeys(mouseButton) {
+function displayKeys(mouseButton: number): Record<number, string> {
 	var key = $("#form_key");
 	key.empty();
-	var keys = [];
+	var keys: Record<number, string> = [];
 
 	keys[16] = "shift";
 	keys[17] = "ctrl";
@@ -448,18 +478,15 @@ function displayKeys(mouseButton) {
 	return keys;
 }
 
-function load_new_action(event) {
+function load_new_action(event: JQuery.Event) {
 	load_action(null);
 	event.preventDefault();
 }
 
-function save_action(event) {
-	console.log("save_action");
-	console.log(params);
-
+function save_action(event: JQuery.Event) {
 	var id = $("#form_id").val();
 
-	var param = {};
+	var param: ActionParam = {} as ActionParam;
 
 	param.mouse = $("#form_mouse").val();
 	param.key = $("#form_key").val();
@@ -535,7 +562,7 @@ function save_block() {
 	}
 }
 
-$(function () {
+$(function() {
 	var isFirstTime = window.location.href.indexOf("init=true") > -1;
 
 	// temp check to not load if in test mode
@@ -559,7 +586,6 @@ $(function () {
 		debug: true
 	}, 
 	function (response) {
-		console.log("response", response);
 		params = response;
 
 		for (var i in params.actions) {

@@ -27,7 +27,8 @@
   ],
   "permissions": [
     "bookmarks",
-    "storage"
+    "storage",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "*://*/*"
