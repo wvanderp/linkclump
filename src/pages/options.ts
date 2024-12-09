@@ -161,9 +161,9 @@ function load_action(id: string | null) {  // into form
 
 				case "checkbox":
 					if (param.options[i]) {
-						$("#form_option_" + i).attr("checked", "true");
+						$("#form_option_" + i).prop("checked", true);
 					} else {
-						$("#form_option_" + i).attr("checked", "false");
+						$("#form_option_" + i).prop("checked", false);
 					}
 					break;
 
