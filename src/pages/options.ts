@@ -10,8 +10,8 @@ interface Trigger {
 
 interface ActionOption {
     name: string;
-    type: 'selection' | 'selection-textbox' | 'textbox' | 'checkbox';
-    data?: string[];
+    type: 'number' | 'selection' | 'selection-textbox' | 'textbox' | 'checkbox';
+    data?: number[] | string[];
     extra: string;
 }
 
@@ -38,12 +38,23 @@ const config: Config = {
 	"triggers":
 		[{ "name": "Left" }, { "name": "Middle" }, { "name": "Right" }],
 	"actions": {
-		"win": { "name": "Opened in a New Window", "options": ["smart", "ignore", "delay", "block", "reverse", "unfocus"] },
-		"tabs": { "name": "Opened as New Tabs", "options": ["smart", "ignore", "delay", "close", "block", "reverse", "end"] },
-		"bm": { "name": "Bookmarked", "options": ["smart", "ignore", "block", "reverse"] },
-		"copy": { "name": "Copied to clipboard", "options": ["smart", "ignore", "copy", "block", "reverse"] }
+		"win": { "name": "Opened in a New Window", "options": ["fontsizeofcounter", "samebgcolorasbox", "smart", "ignore", "delay", "block", "reverse", "unfocus"] },
+		"tabs": { "name": "Opened as New Tabs", "options": ["fontsizeofcounter", "samebgcolorasbox", "smart", "ignore", "delay", "close", "block", "reverse", "end"] },
+		"bm": { "name": "Bookmarked", "options": ["fontsizeofcounter", "samebgcolorasbox", "smart", "ignore", "block", "reverse"] },
+		"copy": { "name": "Copied to clipboard", "options": ["fontsizeofcounter", "samebgcolorasbox", "smart", "ignore", "copy", "block", "reverse"] }
 	},
 	"options": {
+		"fontsizeofcounter": {
+			"name": "counter font size",
+			"type": "number",
+			"data": [10, 8, 32], // [ default, min , max ]
+			"extra": "font size of the counter (default:10, range: 8-32)"
+		},
+		"samebgcolorasbox": {
+			"name": "bgcolor of the counter the same as the box",
+			"type": "checkbox",
+			"extra": "select whether to make the background color of the counter the same as the box color"
+		},
 		"smart": {
 			"name": "smart select",
 			"type": "selection",
@@ -151,6 +162,10 @@ function load_action(id: string | null) {  // into form
 
 		for (var i in param.options) {
 			switch (config.options[i].type) {
+				case "number":
+					$("#form_option_" + i).val(param.options[i]);
+					break;
+
 				case "selection":
 					$("#form_option_" + i).val(param.options[i]);
 					break;
@@ -161,9 +176,9 @@ function load_action(id: string | null) {  // into form
 
 				case "checkbox":
 					if (param.options[i]) {
-						$("#form_option_" + i).attr("checked", "true");
+						$("#form_option_" + i).prop("checked", true);
 					} else {
-						$("#form_option_" + i).attr("checked", "false");
+						$("#form_option_" + i).prop("checked", false);
 					}
 					break;
 
@@ -242,6 +257,9 @@ function setup_action(param: ActionParam, id: string): JQuery {
 		var op = config.options[j];
 		var text = op.name + ": ";
 		switch (op.type) {
+			case "number":
+				text += param.options[j];
+				break;
 			case "selection":
 				text += op.data[param.options[j]];
 				break;
@@ -403,6 +421,14 @@ function displayOptions(action: string) {
 		p.append(title);
 
 		switch (op.type) {
+			case "number":
+				const def = op?.data[0];
+				const min = op?.data[1];
+				const max = op?.data[2];
+
+				p.append(`<input type="number" name="${op.name}" id="form_option_${config.actions[action].options[i]}" value="${def}" step="1" min="${min}" max="${max}" />`);
+				break;
+
 			case "selection":
 				var selector = $("<select id='form_option_" + config.actions[action].options[i] + "'>");
 				for (var j in op.data) {
@@ -510,19 +536,34 @@ function save_action(event: JQuery.Event) {
 				ignore.unshift(param.options[name] = $("#form_option_selection_" + name).val());
 
 				param.options[name] = ignore;
-			} else if (name === "delay" || name === "close") {
-				var delay;
+			} else if (name === "delay" || name === "close" || name === "copy") {
+				var value: number;
+
 				try {
-					delay = parseFloat($("#form_option_" + name).val());
+					value = parseFloat($("#form_option_" + name).val());
 				} catch (err) {
-					delay = 0;
-				}
-				if (isNaN(delay)) {
-					delay = 0;
+					value = 0;
 				}
 
+				if (isNaN(value)) {
+					value = 0;
+				}
 
-				param.options[name] = delay;
+				param.options[name] = value;
+			} else if (name == "fontsizeofcounter") {
+				let fontsize= parseFloat($("#form_option_" + name).val());
+				const def: number = (config.options[name])["data"][0];
+				const min: number = (config.options[name])["data"][1];
+				const max: number = (config.options[name])["data"][2];
+
+				if (!fontsize || typeof fontsize !== "number") {
+					fontsize = def;
+				}
+				if (fontsize < min || max < fontsize) {
+					fontsize = def;
+				}
+
+				param.options[name] = fontsize;
 			} else {
 				param.options[name] = $("#form_option_" + name).val();
 			}

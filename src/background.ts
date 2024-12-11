@@ -55,7 +55,9 @@ class SettingsManager {
 						"close": 0,
 						"block": true,
 						"reverse": false,
-						"end": false
+						"end": false,
+						"fontsizeofcounter": 10,
+						"samebgcolorasbox": false // If you want to set the color of counter to the same as the box color, specify a value of true
 					}
 				}
 			},

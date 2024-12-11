@@ -32,6 +32,7 @@ declare global {
 const END_CODE = "End";
 const HOME_CODE = "Home";
 const Z_INDEX = "2147483647";
+const COUNTER_FONT_SIZE = 10;
 const OS_WIN = 1;
 const OS_LINUX = 0;
 const LEFT_BUTTON = 0;
@@ -123,7 +124,7 @@ function create_box() {
 	window.box.style.margin = "0px auto";
 	window.box.style.border = "2px dotted " + (window.settings[window.setting]?.color ?? "red");
 	window.box.style.position = "absolute";
-	window.box.style.zIndex = Z_INDEX;
+	window.box.style.zIndex = (parseFloat(Z_INDEX) - 1).toString();
 	window.box.style.visibility = "hidden";
 
 	// set the box properties
@@ -138,17 +139,29 @@ function create_box() {
 }
 
 function create_count_label() {
+	const base = COUNTER_FONT_SIZE;
+
 	window.count_label = document.createElement("span");
+
 	window.count_label.style.zIndex = Z_INDEX;
-	window.count_label.style.position = "absolute";
+	window.count_label.style.display = "inline-block";
 	window.count_label.style.visibility = "hidden";
-	window.count_label.style.left = "10px";
-	window.count_label.style.width = "50px";
-	window.count_label.style.top = "10px";
-	window.count_label.style.height = "20px";
-	window.count_label.style.fontSize = "10px";
+
+	window.count_label.style.position = "absolute";
+	window.count_label.style.top = "0";
+	window.count_label.style.left = "0";
+
+	window.count_label.style.lineHeight = `${base * 1}px`;
+	window.count_label.style.fontSize = `${base * 1}px`;
 	window.count_label.style.font = "Arial, sans-serif";
+	window.count_label.style.fontWeight = "bold";
+
 	window.count_label.style.color = "black";
+	window.count_label.style.backgroundColor = "transparent";
+
+	window.count_label.style.padding = `${base * 0.50}px`;
+	window.count_label.style.borderRadius = `${base * 0.50}px`;
+	window.count_label.style.border = `${base * 0.25}px double transparent`;
 
 	return window.count_label;
 }
@@ -239,8 +252,10 @@ function mousedown(event: MouseEvent) {
 function update_box(x: number, y: number) {
 	var width = Math.max(document.documentElement["clientWidth"], document.body["scrollWidth"], document.documentElement["scrollWidth"], document.body["offsetWidth"], document.documentElement["offsetWidth"]); // taken from jquery
 	var height = Math.max(document.documentElement["clientHeight"], document.body["scrollHeight"], document.documentElement["scrollHeight"], document.body["offsetHeight"], document.documentElement["offsetHeight"]); // taken from jquery
-	x = Math.min(x, width - 7);
-	y = Math.min(y, height - 7);
+
+	const scrollbarWidth = window.innerWidth - document.body.clientWidth;
+	x = Math.min(x, width - scrollbarWidth);
+	y = Math.min(y, height - scrollbarWidth);
 
 	if (x > window.box.x) {
 		window.box.x1 = window.box.x;
@@ -262,8 +277,10 @@ function update_box(x: number, y: number) {
 	window.box.style.top = window.box.y1 + "px";
 	window.box.style.height = window.box.y2 - window.box.y1 + "px";
 
-	window.count_label.style.left = x - 15 + "px";
-	window.count_label.style.top = y - 15 + "px";
+	const adjustPositionTop = window.count_label.offsetHeight + window.count_label.offsetHeight * 0.25;
+	const adjustPositionLeft = window.count_label.offsetWidth + window.count_label.offsetHeight * 0.25;
+	window.count_label.style.top = (y - adjustPositionTop) + "px";
+	window.count_label.style.left = (x - adjustPositionLeft) + "px";
 }
 
 function mousewheel() {
@@ -535,8 +552,8 @@ function detect(x: number, y: number, open: boolean) {
 			}
 
 			if (window.links[i].box === null) {
-				var link_box = document.createElement("span");
-				link_box.id = "linkclump-link";
+				const link_box = document.createElement("span");
+				link_box.className = "linkclump-link";
 				link_box.style.margin = "0px auto";
 				link_box.style.border = "1px solid red";
 				link_box.style.position = "absolute";
@@ -544,7 +561,7 @@ function detect(x: number, y: number, open: boolean) {
 				link_box.style.height = window.links[i].height + "px";
 				link_box.style.top = window.links[i].y1 + "px";
 				link_box.style.left = window.links[i].x1 + "px";
-				link_box.style.zIndex = Z_INDEX;
+				link_box.style.zIndex = (parseFloat(Z_INDEX) - 1).toString();
 
 				document.body.appendChild(link_box);
 				window.links[i].box = link_box;
@@ -622,15 +639,38 @@ function remove_key() {
 
 function allow_selection() {
 	for (var i in window.settings) {
+		const setting = window.settings[i];
+
 		// need to check if key is 0 as key_pressed might not be accurate
-		if (
-			window.settings[i]?.mouse == window.mouse_button
-			&& window.settings[i]?.key == window.key_pressed
-		) {
-			window.setting = Number.parseInt(i, 10);
+		if (setting?.mouse == window.mouse_button && setting?.key == window.key_pressed) {
+			window.setting = Number.parseInt(i, 10)
+
 			if (window.box !== null) {
-				window.box.style.border = "2px dotted " + window.settings[i]?.color;
+				// box
+				window.box.style.border = "2px dotted " + (setting?.color ?? "red");
+
+				// counter
+				if ((setting?.color && typeof setting.color === "string") && (setting?.options?.samebgcolorasbox && typeof setting?.options.samebgcolorasbox === "boolean" && setting.options.samebgcolorasbox)) {
+					window.count_label.style.color = "white";
+					window.count_label.style.borderColor = "white";
+					window.count_label.style.backgroundColor = setting.color.toString();
+				}
+				if (setting?.options?.fontsizeofcounter && (typeof setting.options.fontsizeofcounter === "number")) {
+					const num = setting.options.fontsizeofcounter;
+					const base = num || COUNTER_FONT_SIZE;
+
+					window.count_label.style.fontSize = `${base * 1}px`;
+					window.count_label.style.lineHeight = `${base * 1}px`;
+
+					window.count_label.style.padding = `${base * 0.50}px`;
+					window.count_label.style.borderWidth = `${base * 0.25}px`;
+					window.count_label.style.borderRadius = `${base * 0.50}px`;
+				} else {
+					// debug
+					console.error("Error, setting.options.fontsizeofcounter is not of type number. value >>", setting.options.fontsizeofcounter);
+				}
 			}
+
 			return true;
 		}
 	}
